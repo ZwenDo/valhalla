@@ -820,6 +820,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** The owner of this functional expression. */
         public Symbol owner;
 
+        public SpecializationKind specializationKind;
+
+        public enum SpecializationKind {
+            CONSTANT,
+            DYNAMIC,
+            ;
+        }
+
+
         public Type getDescriptorType(Types types) {
             return target != null ? types.findDescriptorType(target) : types.createErrorType(null);
         }
@@ -1864,6 +1873,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression meth;
         public List<JCExpression> args;
         public Type varargsElement;
+        public boolean isRaw;
+        public List<Pair<Type, Type>> inferenceMapping = List.nil();
+
         protected JCMethodInvocation(List<JCExpression> typeargs,
                         JCExpression meth,
                         List<JCExpression> args)
@@ -1915,6 +1927,18 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Symbol constructor;
         public Type varargsElement;
         public Type constructorType;
+        /// This field's value is true only for raw call to generic constructors.
+        /// ```
+        /// class A {
+        ///     <T> A() {}
+        /// }
+        /// new A();
+        /// // instead of
+        /// new <X>A();
+        /// ```
+        public boolean isRaw;
+        public List<Pair<Type, Type>> inferenceMapping = List.nil();
+
         protected JCNewClass(JCExpression encl,
                            List<JCExpression> typeargs,
                            JCExpression clazz,
@@ -2624,6 +2648,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public boolean ownerAccessible;
         private OverloadKind overloadKind;
         public Type referentType;
+        public List<Pair<Type, Type>> inferenceMapping = List.nil();
 
         public enum OverloadKind {
             OVERLOADED,

@@ -322,6 +322,10 @@ public class JavaCompiler {
      */
     protected TransTypes transTypes;
 
+    /** The type reifier.
+     */
+    protected TransParameterizedTypes transParameterizedTypes;
+
     /** The syntactic sugar desweetener.
      */
     protected Lower lower;
@@ -419,6 +423,7 @@ public class JavaCompiler {
         flow = Flow.instance(context);
         warningAnalyzer = WarningAnalyzer.instance(context);
         transTypes = TransTypes.instance(context);
+        transParameterizedTypes = TransParameterizedTypes.instance(context);
         lower = Lower.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
@@ -1622,6 +1627,16 @@ public class JavaCompiler {
         }
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);
+
+        if (shouldStop(CompileState.TRANSPARAMETERIZED_TYPES))
+            return;
+
+        if (!env.tree.hasTag(JCTree.Tag.PACKAGEDEF) && !env.tree.hasTag(JCTree.Tag.MODULEDEF)) {
+            env.tree = transParameterizedTypes.translateTopLevelClass(env, env.tree, make.forToplevel(env.toplevel));
+
+            compileStates.put(env, CompileState.TRANSPARAMETERIZED_TYPES);
+        }
+
         for (Env<AttrContext> dep: scanner.dependencies) {
             if (!compileStates.isDone(dep, CompileState.WARN))
                 desugaredEnvs.put(dep, desugar(warn(flow(attribute(dep)))));
@@ -1939,6 +1954,7 @@ public class JavaCompiler {
         lintMapper = null;
         flow = null;
         transTypes = null;
+        transParameterizedTypes = null;
         lower = null;
         annotate = null;
         types = null;

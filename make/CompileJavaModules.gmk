@@ -126,6 +126,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
         --module-source-path $(MODULESOURCEPATH) \
         --module-path $(MODULEPATH) \
         --system none, \
+        -Xlint:preview \
 ))
 
 TARGETS += $($(MODULE))

@@ -34,6 +34,8 @@ import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
+import java.util.ptype.TypeDescriptorPassingHandler;
+
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
@@ -285,6 +287,7 @@ public class Thread implements Runnable {
         volatile int priority;
         volatile boolean daemon;
         volatile int threadStatus;
+        private final TypeDescriptorPassingHandler stpHandler = new TypeDescriptorPassingHandler();
 
         // Used by NativeThread for signalling
         @Stable long nativeThreadID;
@@ -314,6 +317,14 @@ public class Thread implements Runnable {
     void setTerminatingThreadLocals(ThreadLocal.ThreadLocalMap map) {
         holder.terminatingThreadLocals = map;
     }
+
+    /// Gets the specialized type passing handler.
+    ///
+    /// @return the specialized type passing handler
+    public TypeDescriptorPassingHandler stpHandler() {
+        return holder.stpHandler;
+    }
+
 
     long nativeThreadID() {
         return holder.nativeThreadID;

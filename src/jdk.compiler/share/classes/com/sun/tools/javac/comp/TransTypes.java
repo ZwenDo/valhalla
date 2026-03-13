@@ -649,6 +649,19 @@ public class TransTypes extends TreeTranslator {
                         (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
     }
 
+    public JCTree.JCExpression convertToLambda(JCMemberReference reference, TreeMaker make, Env<AttrContext> env) {
+        var oldMake = this.make;
+        var oldEnv = this.env;
+        try {
+            this.make = make;
+            this.env = env;
+            return new MemberReferenceToLambda(reference).lambda();
+        } finally {
+            this.make = oldMake;
+            this.env = oldEnv;
+        }
+    }
+
     /**
      * Converts a method reference which cannot be used directly into a lambda
      */
@@ -807,6 +820,14 @@ public class TransTypes extends TreeTranslator {
             }
             return vsym;
         }
+    }
+
+    @Override
+    public void visitLetExpr(LetExpr tree) {
+        tree.defs = translate(tree.defs);
+        tree.expr = translate(tree.expr, pt);
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
     public void visitSwitch(JCSwitch tree) {

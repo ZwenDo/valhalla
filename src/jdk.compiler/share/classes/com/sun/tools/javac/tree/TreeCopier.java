@@ -308,7 +308,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         List<JCExpression> typeargs = copy(t.typeargs, p);
         JCExpression meth = copy(t.meth, p);
         List<JCExpression> args = copy(t.args, p);
-        return M.at(t.pos).Apply(typeargs, meth, args);
+        var r = M.at(t.pos).Apply(typeargs, meth, args);
+        r.isRaw = t.isRaw;
+        r.inferenceMapping = t.inferenceMapping;
+        return r;
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -335,7 +338,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression clazz = copy(t.clazz, p);
         List<JCExpression> args = copy(t.args, p);
         JCClassDecl def = copy(t.def, p);
-        return M.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
+        var r = M.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
+        r.isRaw = t.isRaw;
+        r.inferenceMapping = t.inferenceMapping;
+        return r;
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -372,7 +378,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCMemberReference t = (JCMemberReference) node;
         JCExpression expr = copy(t.expr, p);
         List<JCExpression> typeargs = copy(t.typeargs, p);
-        return M.at(t.pos).Reference(t.mode, t.name, expr, typeargs);
+        var r = M.at(t.pos).Reference(t.mode, t.name, expr, typeargs);
+        r.inferenceMapping = t.inferenceMapping;
+        return r;
     }
 
     @DefinedBy(Api.COMPILER_TREE)

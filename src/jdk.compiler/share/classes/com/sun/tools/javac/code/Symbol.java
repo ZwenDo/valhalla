@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -57,6 +58,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.TransParameterizedTypes;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree;
@@ -835,21 +837,39 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     /** A base class for Symbols representing types.
      */
     public abstract static class TypeSymbol extends Symbol {
+        /// Whether this class is part of the specialization prototype
+        private byte fromSpecializationPrototype; // 0 unset | 1 true | -1 false
+
         public TypeSymbol(Kind kind, long flags, Name name, Type type, Symbol owner) {
             super(kind, flags, name, type, owner);
         }
+
         /** form a fully qualified name from a name and an owner
          */
         public static Name formFullName(Name name, Symbol owner) {
             if (owner == null) return name;
             if ((owner.kind != ERR) &&
-                (owner.kind.matches(KindSelector.VAL_MTH) ||
-                 (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
-                 )) return name;
+                    (owner.kind.matches(KindSelector.VAL_MTH) ||
+                         (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
+                    )) return name;
             Name prefix = owner.getQualifiedName();
             if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append('.', name);
+        }
+
+        public void initSpecializationFlag(boolean value) {
+            if (fromSpecializationPrototype != 0) throw new AssertionError("Already initialized");
+            fromSpecializationPrototype = (byte) (value ? 1 : -1);
+        }
+
+        public boolean specializationFlagInitialized() {
+            return fromSpecializationPrototype != 0;
+        }
+
+        public boolean isSpecialized() {
+            if (!specializationFlagInitialized()) throw new AssertionError("Not initialized");
+            return fromSpecializationPrototype == 1;
         }
 
         /** form a fully qualified name from a name and an owner, after
@@ -1337,6 +1357,9 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          */
         private List<RecordComponent> recordComponents = List.nil();
 
+        private ClassSymbol highestGenericClassInHierarchy;
+        private boolean computedHierarchy = false;
+
         // sealed classes related fields
         /** The classes, or interfaces, permitted to extend this class, or interface
          */
@@ -1395,6 +1418,41 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             for (Symbol csym : permittedSubs) {
                 permitted.add(new PermittedClassWithPos(csym, 0));
             }
+        }
+
+        public ClassSymbol highestGenericClassInHierarchy(Symtab symbols) {
+            Objects.requireNonNull(symbols);
+            if (isInterface()) return null;
+            if (!computedHierarchy) {
+                return computeHighestGenericClassInHierarchy(symbols);
+            }
+            return highestGenericClassInHierarchy;
+        }
+
+        private ClassSymbol computeHighestGenericClassInHierarchy(Symtab symbols) {
+            computedHierarchy = true;
+            if (!TransParameterizedTypes.hasNewGenerics(this, symbols)) return null;
+            if (getSuperclass() != Type.noType) {
+                var sup = ((ClassSymbol) getSuperclass().tsym).computeHighestGenericClassInHierarchy(symbols);
+                if (sup != null) {
+                    highestGenericClassInHierarchy = sup;
+                    return sup;
+                }
+            }
+            return highestGenericClassInHierarchy = genericOrGenericInterface(symbols) ? this : null;
+        }
+
+        private boolean genericOrGenericInterface(Symtab symbols) {
+            if (TransParameterizedTypes.isParameterized(this)) return true;
+            for (var superInterface : getInterfaces()) {
+                var superInterfaceSymbol = ((ClassSymbol) superInterface.tsym);
+                if (!TransParameterizedTypes.hasNewGenerics(superInterfaceSymbol, symbols)) continue;
+                var genericSuperInterface = superInterfaceSymbol.computeHighestGenericClassInHierarchy(symbols);
+                if (genericSuperInterface != null) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** The Java source which this symbol represents.

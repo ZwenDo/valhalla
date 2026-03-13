@@ -231,6 +231,29 @@ public class Symtab {
     public final Type classDescType;
     public final Type enumDescType;
 
+    public final Type specializedTypeDescriptorType;
+    public final Type methodDescriptorType;
+    public final Type classDescriptorType;
+    public final Type hiddenClassDescriptorType;
+    public final Type derivedClassDescriptorType;
+    public final Type classDescriptorHolderType;
+    public final Type typeDescriptorAccessorType;
+    public final Type lambdaDescriptorType;
+    public final Type lambdaDescriptorComputeSuperType;
+    public final Type erasedClassDescriptorType;
+    public final Type arrayDescriptorType;
+    public final Type typeDescriptorPassingHandlerType;
+    public final Type specializedTypeHashSetType;
+    public final Type compilerIntrinsicType;
+    public final Type optionalType;
+    public final Type constantTypeDescriptorsType;
+    public final Type superTypeMappingType;
+    public final Type simpleCacheType;
+    public final Type instrumentedAnnotationType;
+    public final Type prototypeInternalAnnotationType;
+    public final Type nestedClassMetadataAnnotationType;
+    public final Attribute.Compound instrumentedAnnotation;
+
     // For serialization lint checking
     public final Type objectStreamFieldType;
     public final Type objectInputStreamType;
@@ -654,6 +677,33 @@ public class Symtab {
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
+
+        specializedTypeDescriptorType = enterClass("java.util.ptype.TypeDescriptor");
+        methodDescriptorType = enterClass("java.util.ptype.MethodDescriptor");
+        classDescriptorType = enterClass("java.util.ptype.ClassDescriptor");
+        hiddenClassDescriptorType = enterClass("java.util.ptype.HiddenClassDescriptor");
+        derivedClassDescriptorType = enterClass("java.util.ptype.DerivedClassDescriptor");
+        classDescriptorHolderType = enterClass("java.util.ptype.ClassDescriptorHolder");
+        typeDescriptorAccessorType = enterClass("java.util.ptype.TypeDescriptorAccessor");
+        lambdaDescriptorType = enterClass("java.util.ptype.LambdaDescriptor");
+        lambdaDescriptorComputeSuperType = enterClass("java.util.ptype.LambdaDescriptor$LambdaComputeSuperHandle");
+        erasedClassDescriptorType = enterClass("java.util.ptype.ErasedClassDescriptor");
+        arrayDescriptorType = enterClass("java.util.ptype.ArrayDescriptor");
+        typeDescriptorPassingHandlerType = enterClass("java.util.ptype.TypeDescriptorPassingHandler");
+        specializedTypeHashSetType = enterClass("java.util.ptype.HashSet");
+        compilerIntrinsicType = enterClass("java.lang.annotation.CompilerIntrinsic");
+        optionalType = enterClass("java.util.Optional");
+        constantTypeDescriptorsType = enterClass("java.util.ptype.ConstantTypeDescriptors");
+        superTypeMappingType = enterClass("java.util.ptype.ComputeSuperFunction$SuperTypeMapping");
+        simpleCacheType = enterClass("java.util.ptype.SimpleDescriptorCache");
+        instrumentedAnnotationType = enterClass("java.util.ptype.Instrumented");
+        prototypeInternalAnnotationType = enterClass("java.util.ptype.PrototypeInternal");
+        nestedClassMetadataAnnotationType = enterClass("java.util.ptype.NestedClassMetadata");
+        instrumentedAnnotation = new Attribute.Compound(
+            instrumentedAnnotationType,
+            List.nil(),
+            null
+        );
 
         numberType = enterClass("java.lang.Number");
 

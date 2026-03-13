@@ -166,6 +166,10 @@ public class LambdaToMethod extends TreeTranslator {
     /** Flag for alternate metafactories indicating the lambda object requires multiple bridges */
     public static final int FLAG_BRIDGES = LambdaMetafactory.FLAG_BRIDGES;
 
+    /** Flag for {@link LambdaMetafactory#altMetafactory} indicating the lambda needs specialisation. */
+    public static final int FLAG_SPECIALISATION = 1 << 3;//LambdaMetafactory.FLAG_SPECIALISATION;
+
+
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     protected static final Context.Key<LambdaToMethod> unlambdaKey = new Context.Key<>();
 
@@ -843,7 +847,7 @@ public class LambdaToMethod extends TreeTranslator {
         List<Symbol> bridges = bridges(tree);
         boolean isSerializable = isSerializable(tree);
         boolean needsAltMetafactory = tree.target.isIntersection() ||
-                isSerializable || bridges.length() > 1;
+                isSerializable || bridges.length() > 1 || tree.specializationKind != null;
 
         dumpStats(tree, needsAltMetafactory, nonDedupedRefSym);
 
@@ -872,6 +876,9 @@ public class LambdaToMethod extends TreeTranslator {
             if (hasBridges) {
                 flags |= FLAG_BRIDGES;
             }
+            if (tree.specializationKind != null) {
+                flags |= FLAG_SPECIALISATION;
+            }
             staticArgs = staticArgs.append(LoadableConstant.Int(flags));
             if (hasMarkers) {
                 staticArgs = staticArgs.append(LoadableConstant.Int(markers.length()));
@@ -894,6 +901,9 @@ public class LambdaToMethod extends TreeTranslator {
                             tree, staticArgs, indyType);
                 } finally {
                     make.at(prevPos);
+                }
+                if (tree.specializationKind != null) {
+                    staticArgs = staticArgs.append(LoadableConstant.Int(tree.specializationKind == JCFunctionalExpression.SpecializationKind.CONSTANT ? 1 : 0));
                 }
             }
         }
@@ -1279,7 +1289,7 @@ public class LambdaToMethod extends TreeTranslator {
      * ****************************************************************
      */
 
-    private String typeSig(Type type) {
+    public String typeSig(Type type) {
         return typeSig(type, false);
     }
 
